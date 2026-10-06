@@ -677,14 +677,14 @@
 
 .couple-cards {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: 16px;
   /* flex-wrap: wrap; */
 }
 
 .couple-card {
-  flex: 1;
+  /* flex: 1; */
   /* min-width: 200px; */
   max-width: 260px;
 }
@@ -731,6 +731,7 @@
 .couple-heart {
   color: var(--rose);
   font-size: 1.5rem;
+  margin: auto 0;
   animation: pulse 2s ease infinite;
 }
 
