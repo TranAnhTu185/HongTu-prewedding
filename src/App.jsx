@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { weddingConfig } from "./data/weddingConfig";
 import MusicPlayer from "./components/MusicPlayer";
 import PhotoGallery from "./components/PhotoGallery";
+import LoveTimeline from "./components/LoveTimeline";
 import ScrollReveal from "./components/ScrollReveal";
 import SectionDivider from "./components/SectionDivider";
 import WeddingCalendar from "./components/WeddingCalendar";
@@ -31,7 +32,7 @@ function useCountdown(targetDate) {
   return time;
 }
 
-function Envelope({ onOpen }) {
+function Envelope({ onOpen, inviteeName }) {
   return (
     <div className="envelope-screen">
       <div className="petals" aria-hidden="true">
@@ -42,10 +43,12 @@ function Envelope({ onOpen }) {
       <div className="envelope-content">
         <div className="envelope-frame">
           <p className="envelope-sub">Trân trọng kính mời</p>
+          {inviteeName && <p className="envelope-guest">{inviteeName}</p>}
+          <p className="envelope-intro">Đến dự buổi tiệc thân mật chung vui cùng gia đình chúng tôi</p>
           <h1 className="envelope-names">
-            {weddingConfig.groom.name}
-            <span className="ampersand"> & </span>
-            {weddingConfig.bride.name}
+            <span className="envelope-name">{weddingConfig.groom.name}</span>
+            <span className="ampersand" aria-label="và">&</span>
+            <span className="envelope-name">{weddingConfig.bride.name}</span>
           </h1>
           <p className="envelope-date">
             {new Date(weddingConfig.weddingDate).toLocaleDateString("vi-VN", {
@@ -63,8 +66,119 @@ function Envelope({ onOpen }) {
   );
 }
 
+function encodeInviteeName(name) {
+  const bytes = new TextEncoder().encode(name);
+  let binary = "";
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+
+function decodeInviteeName(token) {
+  try {
+    const base64 = token.replaceAll("-", "+").replaceAll("_", "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    return new TextDecoder().decode(bytes).trim();
+  } catch {
+    return "";
+  }
+}
+
+function getInviteeName() {
+  const segments = window.location.pathname.split("/").filter(Boolean);
+  if (segments[0] === "moi" && segments[1]) {
+    const decoded = decodeInviteeName(segments[1]);
+    if (decoded) return decoded;
+    return decodeURIComponent(segments.slice(1).join(" ")).replaceAll("-", " ").trim();
+  }
+
+  const queryName = new URLSearchParams(window.location.search).get("to");
+  if (queryName) return queryName.trim();
+
+  if (segments.length === 1 && segments[0] !== "tao-link" && segments[0] !== "index.html") {
+    return decodeURIComponent(segments[0]).replaceAll("+", " ").trim();
+  }
+  return "";
+}
+
+function InviteLinkCreator() {
+  const [names, setNames] = useState("");
+  const [invitees, setInvitees] = useState([]);
+  const [status, setStatus] = useState("");
+
+  const createLink = (event) => {
+    event.preventDefault();
+    const guestNames = [...new Set(names.split(/\r?\n/).map((guestName) => guestName.trim()).filter(Boolean))];
+    if (!guestNames.length) return;
+    setInvitees(guestNames.map((guestName) => ({
+      name: guestName,
+      url: `${window.location.origin}/moi/${encodeInviteeName(guestName)}`,
+    })));
+    setStatus("");
+  };
+
+  const copyText = async (text, successMessage) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus(successMessage);
+    } catch {
+      setStatus("Không sao chép tự động được. Hãy chọn và sao chép link cần dùng.");
+    }
+  };
+
+  return (
+    <main className="invite-link-screen">
+      <section className="invite-link-panel">
+        <p className="envelope-sub">Thiệp cưới Anh Tú & Trần Hồng</p>
+        <h1 className="invite-link-title">Tạo link mời riêng</h1>
+        <p className="invite-link-intro">Nhập mỗi tên trên một dòng. Mỗi khách mời sẽ có một link riêng.</p>
+        <form className="invite-link-form" onSubmit={createLink}>
+          <label htmlFor="invitee-names">Danh sách khách mời</label>
+          <textarea
+            id="invitee-names"
+            value={names}
+            onChange={(event) => setNames(event.target.value)}
+            maxLength={10000}
+            rows={6}
+            placeholder={'Ví dụ:\nTrần Tú\nNguyễn Minh Anh\nGia đình cô Lan'}
+            required
+          />
+          <button type="submit" className="open-btn">Tạo link riêng cho từng người</button>
+        </form>
+        {invitees.length > 0 && (
+          <div className="invite-link-result">
+            <div className="invite-link-list-heading">
+              <strong>Đã tạo {invitees.length} link riêng</strong>
+              <button
+                type="button"
+                className="footer-action"
+                onClick={() => copyText(invitees.map(({ name, url }) => `${name}: ${url}`).join("\n"), "Đã sao chép toàn bộ danh sách link mời.")}
+              >Sao chép tất cả</button>
+            </div>
+            <div className="invite-link-list">
+              {invitees.map(({ name, url }) => (
+                <div className="invite-link-item" key={`${name}-${url}`}>
+                  <label htmlFor={`invite-link-${encodeInviteeName(name)}`}>{name}</label>
+                  <input id={`invite-link-${encodeInviteeName(name)}`} value={url} readOnly onFocus={(event) => event.target.select()} />
+                  <div className="invite-link-actions">
+                    <button type="button" className="footer-action" onClick={() => copyText(url, `Đã sao chép link của ${name}.`)}>Sao chép link</button>
+                    <a className="footer-action" href={url} target="_blank" rel="noreferrer">Xem thử</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {status && <p className="footer-action-status" role="status">{status}</p>}
+          </div>
+        )}
+        <p className="invite-link-note">Tên được mã hóa trong đường dẫn để thiệp có thể hiện lời mời riêng. Đây là mã URL-safe, không phải mã bảo mật.</p>
+      </section>
+    </main>
+  );
+}
+
 function Countdown() {
-  const time = useCountdown(weddingConfig.weddingDate);
+  const time = useCountdown(weddingConfig.weddingDateTime || weddingConfig.weddingDate);
 
   return (
     <div className="countdown">
@@ -93,13 +207,42 @@ function RSVPForm() {
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionMessage, setSubmissionMessage] = useState("");
+  const [submissionError, setSubmissionError] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const rsvps = JSON.parse(localStorage.getItem("wedding-rsvp") || "[]");
-    rsvps.push({ ...form, submittedAt: new Date().toISOString() });
-    localStorage.setItem("wedding-rsvp", JSON.stringify(rsvps));
-    setSubmitted(true);
+    if (isSubmitting) return;
+
+    const endpoint = weddingConfig.rsvpEndpoint;
+    if (!endpoint) {
+      setSubmissionError(true);
+      setSubmissionMessage("Form xác nhận đang chờ kết nối Google Sheets. Vui lòng liên hệ cô dâu chú rể để xác nhận.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmissionError(false);
+    try {
+      await fetch(endpoint, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          ...form,
+          guests: form.attending === "yes" ? form.guests : "0",
+          submittedAt: new Date().toISOString(),
+        }),
+      });
+      setSubmitted(true);
+      setSubmissionMessage("Đã gửi yêu cầu xác nhận. Cảm ơn bạn!");
+    } catch {
+      setSubmissionError(true);
+      setSubmissionMessage("Chưa gửi được xác nhận. Vui lòng thử lại hoặc liên hệ cô dâu chú rể.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -107,12 +250,8 @@ function RSVPForm() {
       <div className="rsvp-thanks">
         <div className="heart-icon">♥</div>
         <h3>Cảm ơn bạn!</h3>
-        <p>
-          Lời xác nhận của bạn đã được ghi nhận. Hẹn gặp bạn trong ngày vui!
-        </p>
-        <p className="rsvp-storage-note">
-          Thông tin đang được lưu trên thiết bị của bạn.
-        </p>
+        <p>{submissionMessage}</p>
+        <p>Hẹn gặp bạn trong ngày vui!</p>
       </div>
     );
   }
@@ -166,12 +305,95 @@ function RSVPForm() {
           placeholder="Gửi lời chúc đến cô dâu chú rể..."
         />
       </div>
-      <button type="submit" className="submit-btn">
-        Gửi xác nhận
+      <button type="submit" className="submit-btn" disabled={isSubmitting}>
+        {isSubmitting ? "Đang gửi…" : "Gửi xác nhận"}
       </button>
-      <p className="rsvp-storage-note">Xác nhận được lưu trên thiết bị này.</p>
+      {submissionMessage && (
+        <p className={`rsvp-storage-note ${submissionError ? "rsvp-storage-note--error" : ""}`} role="status">
+          {submissionMessage}
+        </p>
+      )}
     </form>
   );
+}
+
+function ShareInviteButton() {
+  const [message, setMessage] = useState("");
+
+  const handleShare = async () => {
+    const shareData = {
+      title: document.title,
+      text: `Mời bạn cùng chung vui ngày cưới của ${weddingConfig.groom.name} và ${weddingConfig.bride.name}.`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      setMessage("Đã sao chép liên kết thiệp.");
+    } catch {
+      setMessage("Bạn có thể sao chép liên kết thiệp từ thanh địa chỉ.");
+    }
+  };
+
+  return (
+    <div className="footer-action-wrap">
+      <button type="button" className="footer-action" onClick={handleShare}>
+        <span aria-hidden="true">↗</span>
+        Chia sẻ thiệp
+      </button>
+      {message && <span className="footer-action-status" role="status">{message}</span>}
+    </div>
+  );
+}
+
+function saveWeddingDate() {
+  const [year, month, day] = weddingConfig.weddingDate.split("-").map(Number);
+  const startDate = `${year}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}`;
+  const nextDay = new Date(Date.UTC(year, month - 1, day + 1));
+  const endDate = nextDay.toISOString().slice(0, 10).replaceAll("-", "");
+  const escapeIcs = (value) => String(value || "")
+    .replaceAll("\\", "\\\\")
+    .replaceAll(";", "\\;")
+    .replaceAll(",", "\\,")
+    .replaceAll("\n", "\\n");
+  const schedule = weddingConfig.events
+    .map((event) => `${event.time} - ${event.title}: ${event.venue}, ${event.address}`)
+    .join("\n");
+  const details = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Wedding Invitation//VI",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${startDate}-wedding-invitation@card-online`,
+    `DTSTAMP:${new Date().toISOString().replaceAll("-", "").replaceAll(":", "").replace(/\.\d{3}/, "")}`,
+    `DTSTART;VALUE=DATE:${startDate}`,
+    `DTEND;VALUE=DATE:${endDate}`,
+    `SUMMARY:${escapeIcs(`Ngày cưới: ${weddingConfig.groom.name} & ${weddingConfig.bride.name}`)}`,
+    `DESCRIPTION:${escapeIcs(`Lịch trình ngày cưới:\n${schedule}\n\nThiệp cưới: ${window.location.href}`)}`,
+    `LOCATION:${escapeIcs(weddingConfig.events[0]?.address)}`,
+    `URL:${window.location.href}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+  const file = new Blob([details], { type: "text/calendar;charset=utf-8" });
+  const fileUrl = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = fileUrl;
+  link.download = "ngay-cuoi-anh-tu-tran-hong.ics";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
 }
 
 function BankQr({ bank, bankCode, account, name }) {
@@ -192,8 +414,10 @@ function BankQr({ bank, bankCode, account, name }) {
 
 function App() {
   const [opened, setOpened] = useState(false);
+  const inviteeName = getInviteeName();
+  const isInviteLinkCreator = window.location.pathname.replace(/\/+$/, "") === "/tao-link";
   const musicRef = useRef(null);
-  const { groom, bride, events, quote, bankInfo, heroPhoto, music, album } =
+  const { groom, bride, events, quote, bankInfo, heroPhoto, heroPhotoMobile, music, album, timeline } =
     weddingConfig;
 
   const handleOpen = () => {
@@ -202,12 +426,14 @@ function App() {
     setOpened(true);
   };
 
+  if (isInviteLinkCreator) return <InviteLinkCreator />;
+
   return (
     <>
       <MusicPlayer ref={musicRef} url={music?.url} />
 
       {!opened ? (
-        <Envelope onOpen={handleOpen} />
+        <Envelope onOpen={handleOpen} inviteeName={inviteeName} />
       ) : (
         <div className="wedding-app wedding-app--open">
           <FallingHearts />
@@ -221,12 +447,15 @@ function App() {
           <header className="hero">
             {heroPhoto ? (
               <div className="hero-banner">
-                <img
-                  src={heroPhoto}
-                  alt={`${groom.name} và ${bride.name}`}
-                  fetchPriority="high"
-                  decoding="async"
-                />
+                <picture className="hero-banner__picture">
+                  {heroPhotoMobile && <source media="(max-width: 600px)" srcSet={heroPhotoMobile} />}
+                  <img
+                    src={heroPhoto}
+                    alt={`${groom.name} và ${bride.name}`}
+                    fetchPriority="high"
+                    decoding="async"
+                  />
+                </picture>
                 <div className="hero-banner__overlay">
                   <p className="hero-sub">Save The Date</p>
                   <h1 className="hero-names hero-names--overlay">
@@ -234,14 +463,19 @@ function App() {
                     <span className="ampersand">&</span>
                     <span>{bride.name}</span>
                   </h1>
-                  {/* <p className="hero-banner-date">
-                {new Date(weddingConfig.weddingDate).toLocaleDateString('vi-VN', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
-              </p> */}
+                  <p className="hero-banner-date">
+                    {new Date(weddingConfig.weddingDate).toLocaleDateString("vi-VN", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                  {events?.[0] && (
+                    <p className="hero-banner-venue">
+                      {events[0].venue} <span aria-hidden="true">·</span> {events[0].address}
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (
@@ -285,6 +519,18 @@ function App() {
               <blockquote>{quote}</blockquote>
             </section>
           </ScrollReveal>
+
+          <SectionDivider />
+
+          {timeline?.length > 0 && (
+            <ScrollReveal delay={60}>
+              <section className="section timeline-section">
+                <h2 className="section-title">Chuyện chúng mình</h2>
+                <p className="section-sub">Một vài dấu mốc trên hành trình bên nhau</p>
+                <LoveTimeline items={timeline} />
+              </section>
+            </ScrollReveal>
+          )}
 
           <SectionDivider />
 
@@ -341,40 +587,24 @@ function App() {
                   Những khoảnh khắc đẹp nhất của chúng mình
                 </p>
                 <PhotoGallery photos={album} />
-              </section>
-            </ScrollReveal>
-          )}
-
-          {weddingConfig.video?.url && (
-            <div>
-              <SectionDivider />
-              <ScrollReveal delay={100}>
-                <section className="section album-section">
+                {weddingConfig.video?.url && (
                   <div className="album-video">
-                    {weddingConfig.video.title && (
-                      <h2 className="section-title">
-                        {" "}
-                        {weddingConfig.video.title}
-                      </h2>
-                    )}
-                <video
-                  className="album-video__player"
-                  controls
-                  playsInline
-                  preload="metadata"
-                  poster={weddingConfig.video.poster}
-                  onPlay={() => musicRef.current?.pause()}
-                >
-                      <source
-                        src={weddingConfig.video.url}
-                        type={weddingConfig.video.type || "video/mp4"}
-                      />
+                    <h3 className="album-video__title">{weddingConfig.video.title}</h3>
+                    <video
+                      className="album-video__player"
+                      controls
+                      playsInline
+                      preload="none"
+                      poster={weddingConfig.video.poster}
+                      onPlay={() => musicRef.current?.pause()}
+                    >
+                      <source src={weddingConfig.video.url} type={weddingConfig.video.type || "video/mp4"} />
                       Trình duyệt của bạn không hỗ trợ phát video.
                     </video>
                   </div>
-                </section>
-              </ScrollReveal>
-            </div>
+                )}
+              </section>
+            </ScrollReveal>
           )}
 
           <SectionDivider />
@@ -485,6 +715,16 @@ function App() {
             </p>
             <p className="footer-date">
               {new Date(weddingConfig.weddingDate).toLocaleDateString("vi-VN")}
+            </p>
+            <div className="footer-actions">
+              <ShareInviteButton />
+              <button type="button" className="footer-action" onClick={saveWeddingDate}>
+                <span aria-hidden="true">▣</span>
+                Lưu ngày cưới
+              </button>
+            </div>
+            <p className="footer-action-hint">
+              Lưu ngày cưới vào lịch hoặc chia sẻ thiệp với người thân.
             </p>
           </footer>
         </div>

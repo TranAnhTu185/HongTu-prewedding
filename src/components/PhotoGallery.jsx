@@ -10,7 +10,10 @@ export default function PhotoGallery({ photos }) {
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const thumbsRef = useRef(null)
-  const photoItems = photos || []
+  const sourcePhotos = photos || []
+  const photoItems = sourcePhotos.some((photo) => photo.featured)
+    ? [...sourcePhotos.filter((photo) => photo.featured), ...sourcePhotos.filter((photo) => !photo.featured)]
+    : sourcePhotos
   const visiblePhotos = showAll ? photoItems : photoItems.slice(0, INITIAL_COUNT)
   const hasMore = !showAll && photoItems.length > INITIAL_COUNT
 
@@ -83,7 +86,7 @@ export default function PhotoGallery({ photos }) {
         return (index + 1) % photoItems.length
       })
       resetView()
-    }, 3000)
+    }, 5000)
 
     return () => window.clearInterval(intervalId)
   }, [lightbox, photoItems.length, resetView])
@@ -127,7 +130,7 @@ export default function PhotoGallery({ photos }) {
         <button
           type="button"
           className="gallery-show-more submit-btn"
-          onClick={() => open(0)}
+          onClick={() => setShowAll(true)}
         >
           <span>Khám phá thêm kỷ niệm</span>
           <span className="gallery-show-more__count">+{photoItems.length - INITIAL_COUNT} ảnh</span>

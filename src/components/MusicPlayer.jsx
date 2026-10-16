@@ -8,7 +8,6 @@ const MusicPlayer = forwardRef(function MusicPlayer({ url }, ref) {
     const audio = audioRef.current
     if (!audio || !url) return
     audio.volume = 0.4
-    audio.load()
   }, [url])
 
   useImperativeHandle(ref, () => ({
@@ -50,7 +49,7 @@ const MusicPlayer = forwardRef(function MusicPlayer({ url }, ref) {
         ref={audioRef}
         src={url}
         loop
-        preload="auto"
+        preload="none"
         playsInline
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
