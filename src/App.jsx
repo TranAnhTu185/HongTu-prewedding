@@ -356,33 +356,43 @@ function ShareInviteButton() {
 }
 
 function saveWeddingDate() {
-  const [year, month, day] = weddingConfig.weddingDate.split("-").map(Number);
-  const startDate = `${year}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}`;
-  const nextDay = new Date(Date.UTC(year, month - 1, day + 1));
-  const endDate = nextDay.toISOString().slice(0, 10).replaceAll("-", "");
   const escapeIcs = (value) => String(value || "")
     .replaceAll("\\", "\\\\")
     .replaceAll(";", "\\;")
     .replaceAll(",", "\\,")
     .replaceAll("\n", "\\n");
-  const schedule = weddingConfig.events
-    .map((event) => `${event.time} - ${event.title}: ${event.venue}, ${event.address}`)
-    .join("\n");
+  const stamp = new Date().toISOString().replaceAll("-", "").replaceAll(":", "").replace(/\.\d{3}/, "");
+  const calendarEvents = weddingConfig.events.map((event, index) => {
+    const date = (event.dateISO || weddingConfig.weddingDate).replaceAll("-", "");
+    const eventTime = event.time || "09:00";
+    const time = eventTime.replace(":", "");
+    const [hours, minutes] = eventTime.split(":").map(Number);
+    const endMinutes = hours * 60 + minutes + 60;
+    const endHour = String(Math.floor(endMinutes / 60) % 24).padStart(2, "0");
+    const endMinute = String(endMinutes % 60).padStart(2, "0");
+    const nextDate = endMinutes >= 1440
+      ? new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(4, 6)) - 1, Number(date.slice(6, 8)) + 1)).toISOString().slice(0, 10).replaceAll("-", "")
+      : date;
+
+    return [
+      "BEGIN:VEVENT",
+      `UID:${date}-${index}-wedding-invitation@card-online`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;TZID=Asia/Ho_Chi_Minh:${date}T${time}00`,
+      `DTEND;TZID=Asia/Ho_Chi_Minh:${nextDate}T${endHour}${endMinute}00`,
+      `SUMMARY:${escapeIcs(`${event.title}: ${weddingConfig.groom.name} & ${weddingConfig.bride.name}`)}`,
+      `DESCRIPTION:${escapeIcs(`${event.date}, ${event.time}\n${event.venue}\n${event.address}\nBản đồ: ${event.mapUrl}\n\nThiệp cưới: ${window.location.href}`)}`,
+      `LOCATION:${escapeIcs(`${event.venue}, ${event.address}`)}`,
+      `URL:${event.mapUrl || window.location.href}`,
+      "END:VEVENT",
+    ].join("\r\n");
+  }).join("\r\n");
   const details = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Wedding Invitation//VI",
     "CALSCALE:GREGORIAN",
-    "BEGIN:VEVENT",
-    `UID:${startDate}-wedding-invitation@card-online`,
-    `DTSTAMP:${new Date().toISOString().replaceAll("-", "").replaceAll(":", "").replace(/\.\d{3}/, "")}`,
-    `DTSTART;VALUE=DATE:${startDate}`,
-    `DTEND;VALUE=DATE:${endDate}`,
-    `SUMMARY:${escapeIcs(`Ngày cưới: ${weddingConfig.groom.name} & ${weddingConfig.bride.name}`)}`,
-    `DESCRIPTION:${escapeIcs(`Lịch trình ngày cưới:\n${schedule}\n\nThiệp cưới: ${window.location.href}`)}`,
-    `LOCATION:${escapeIcs(weddingConfig.events[0]?.address)}`,
-    `URL:${window.location.href}`,
-    "END:VEVENT",
+    calendarEvents,
     "END:VCALENDAR",
   ].join("\r\n");
   const file = new Blob([details], { type: "text/calendar;charset=utf-8" });
@@ -625,33 +635,69 @@ function App() {
             <section className="section events-section">
               <h2 className="section-title">Thông Tin Sự Kiện</h2>
               <div className="events-grid">
-                {events.map((event) => (
-                  <div key={event.title} className="event-card">
-                    <h3>{event.title}</h3>
-                    <div className="event-detail">
-                      <span className="event-icon">🕐</span>
-                      <div>
-                        <strong>{event.time}</strong>
-                        <p>{event.date}</p>
+                {events.map((event) => {
+                  const [day = "", month = "", year = ""] = event.date.split(",").at(-1).trim().split(".");
+                  const weekday = event.date.split(",")[0];
+
+                  return (
+                    <div key={event.title} className="event-card">
+                      <div className="event-card__cover">
+                        <img src={event.cover} alt="" loading="lazy" decoding="async" />
+                        <span className="event-card__side">Tiệc tại {event.side || "nhà trai"}</span>
+                        <span className="event-card__cover-mark" aria-hidden="true">H <i>✦</i> T</span>
+                      </div>
+                      <div className="event-card__body">
+                        <div className="event-card__topline">
+                          <span className="event-card__eyebrow">Trân trọng kính mời</span>
+                        </div>
+                        <h3>{event.title}</h3>
+                        <div className="event-detail event-detail--schedule">
+                          <div className="event-time-lockup">
+                            <span className="event-icon" aria-hidden="true">
+                              <svg viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="8.5" />
+                                <path d="M12 7v5l3.2 2" />
+                              </svg>
+                            </span>
+                            <div>
+                              <span className="event-meta-label">Bắt đầu lúc</span>
+                              <strong>{event.time}</strong>
+                            </div>
+                          </div>
+                          <div className="event-date-stamp">
+                            <strong>{day}</strong>
+                            <span>
+                              <b>THÁNG {month}</b>
+                              <small>{year}</small>
+                              <small className="event-date-weekday">{weekday}</small>
+                            </span>
+                          </div>
+                        </div>
+                        <div className="event-detail event-detail--venue">
+                          <span className="event-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path d="M19 10.2c0 5-7 10.3-7 10.3S5 15.2 5 10.2a7 7 0 1 1 14 0Z" />
+                              <circle cx="12" cy="10" r="2.2" />
+                            </svg>
+                          </span>
+                          <div>
+                            <strong>{event.venue}</strong>
+                            <p>{event.address}</p>
+                          </div>
+                        </div>
+                        <a
+                          href={event.mapUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="map-link"
+                        >
+                          <span>Xem bản đồ</span>
+                          <span className="map-link__arrow" aria-hidden="true">↗</span>
+                        </a>
                       </div>
                     </div>
-                    <div className="event-detail">
-                      <span className="event-icon">📍</span>
-                      <div>
-                        <strong>{event.venue}</strong>
-                        <p>{event.address}</p>
-                      </div>
-                    </div>
-                    <a
-                      href={event.mapUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="map-link"
-                    >
-                      Xem bản đồ
-                    </a>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           </ScrollReveal>
