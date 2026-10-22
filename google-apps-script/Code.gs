@@ -1,5 +1,13 @@
+const RSVP_SPREADSHEET_ID = "1SU899USPNtryqo89lqTXyF8SceGdHnulOsxD-TdLjno";
+
 function doPost(e) {
-  const payload = JSON.parse((e && e.postData && e.postData.contents) || "{}");
+  let payload;
+  try {
+    payload = JSON.parse((e && e.postData && e.postData.contents) || "{}");
+  } catch (error) {
+    return jsonResponse({ ok: false, error: "invalid_json" });
+  }
+
   const name = String(payload.name || "").trim().slice(0, 120);
   const attending = payload.attending === "yes" ? "Có" : "Không";
   const guests = payload.attending === "yes" ? Math.max(1, Math.min(20, Number(payload.guests) || 1)) : 0;
@@ -9,10 +17,7 @@ function doPost(e) {
     return jsonResponse({ ok: false, error: "missing_name" });
   }
 
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  if (!spreadsheet) {
-    throw new Error("Bind this Apps Script project to the RSVP spreadsheet.");
-  }
+  const spreadsheet = SpreadsheetApp.openById(RSVP_SPREADSHEET_ID);
 
   const sheet = spreadsheet.getSheetByName("RSVP") || spreadsheet.insertSheet("RSVP");
   if (sheet.getLastRow() === 0) {

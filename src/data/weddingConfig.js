@@ -30,7 +30,7 @@ export const weddingConfig = {
     type: 'video/mp4',
   },
   // Dán URL Web App Apps Script có đuôi /exec sau khi triển khai Google Sheets.
-  rsvpEndpoint: '',
+  rsvpEndpoint: 'https://script.google.com/macros/s/AKfycbyJpaJaMkkp7aEHwH64SQL10UHhV7jdrt_e7fdsRlRKBKd1meuOjeMF4Oj_oUNoiv_k/exec',
   // Album ảnh cưới — thêm/xóa ảnh, dùng src local (/photos/...) hoặc URL online
   album: [
     {

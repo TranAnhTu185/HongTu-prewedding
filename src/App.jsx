@@ -640,7 +640,10 @@ function App() {
                   const weekday = event.date.split(",")[0];
 
                   return (
-                    <div key={event.title} className="event-card">
+                    <div
+                      key={event.title}
+                      className={`event-card ${event.side === "nhà gái" ? "event-card--bride" : ""}`}
+                    >
                       <div className="event-card__cover">
                         <img src={event.cover} alt="" loading="lazy" decoding="async" />
                         <span className="event-card__side">Tiệc tại {event.side || "nhà trai"}</span>

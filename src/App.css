@@ -1429,6 +1429,8 @@
   min-width: 0;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(145deg, #fff 0%, #fffaf7 100%);
   border-radius: 20px;
   padding: 0;
@@ -1461,6 +1463,10 @@
   transition: transform 500ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
+.event-card--bride .event-card__cover img {
+  object-position: center 58%;
+}
+
 .event-card:hover .event-card__cover img {
   transform: scale(1.045);
 }
@@ -1485,6 +1491,9 @@
 }
 
 .event-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 20px clamp(18px, 2.5vw, 26px) 22px;
 }
 
@@ -1662,7 +1671,9 @@
   justify-content: space-between;
   gap: 12px;
   min-height: 44px;
-  margin-top: 8px;
+  margin-top: auto;
+  padding-top: 10px;
+  padding-bottom: 10px;
   padding: 0 14px;
   border: 1px solid rgba(166, 124, 124, 0.18);
   border-radius: 12px;
@@ -2595,10 +2606,73 @@
   .event-card {
     height: auto;
   }
+
+  .event-card__cover {
+    height: 184px;
+  }
+
+  .event-card__body {
+    padding: 24px 28px 26px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .events-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 380px));
+    justify-content: center;
+    gap: 18px;
+  }
+
+  .event-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(100%, 380px);
+  }
+
+  .event-card__cover {
+    height: 154px;
+  }
+
+  .event-card__body {
+    padding: 20px 18px 22px;
+  }
+
+  .event-detail--schedule {
+    gap: 8px;
+  }
+
+  .event-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .event-date-stamp {
+    gap: 6px;
+    padding-left: 9px;
+  }
+
+  .event-date-stamp > strong {
+    font-size: 2.05rem;
+  }
 }
 
 @media (min-width: 1200px) {
   .events-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 360px));
+    justify-content: center;
+    max-width: 1120px;
+    gap: 20px;
+  }
+
+  .event-card__cover {
+    height: 174px;
+  }
+
+  .event-card__body {
+    padding: 22px 22px 24px;
+  }
+
+  .event-card h3 {
+    font-size: clamp(1.35rem, 1.55vw, 1.6rem);
   }
 }
