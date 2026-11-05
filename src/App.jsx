@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { weddingConfig } from "./data/weddingConfig";
 import MusicPlayer from "./components/MusicPlayer";
 import PhotoGallery from "./components/PhotoGallery";
@@ -196,6 +197,106 @@ function Countdown() {
         </div>
       ))}
     </div>
+  );
+}
+
+function WishNotification() {
+  const [wishes, setWishes] = useState([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [visible, setVisible] = useState(false);
+  const [loadStatus, setLoadStatus] = useState("loading");
+  const { rsvpEndpoint } = weddingConfig;
+
+  useEffect(() => {
+    if (!rsvpEndpoint) return undefined;
+    let requestId = 0;
+    let mounted = true;
+    let pollTimer;
+    const pendingCleanup = new Set();
+
+    const loadWishes = () => {
+      const callbackName = `weddingWishesCallback${Date.now()}${requestId++}`;
+      const script = document.createElement("script");
+      const cleanup = () => {
+        delete window[callbackName];
+        script.remove();
+        pendingCleanup.delete(cleanup);
+      };
+      pendingCleanup.add(cleanup);
+      window[callbackName] = (response) => {
+        if (mounted && response?.ok && Array.isArray(response.wishes)) {
+          setWishes(response.wishes);
+          setLoadStatus(response.wishes.length ? "ready" : "empty");
+          setVisible(true);
+        } else if (mounted) {
+          setLoadStatus("error");
+          setVisible(true);
+        }
+        cleanup();
+      };
+      script.onerror = () => {
+        if (mounted) {
+          setLoadStatus("error");
+          setVisible(true);
+        }
+        cleanup();
+      };
+      script.src = `${rsvpEndpoint}?action=wishes&callback=${callbackName}&_=${Date.now()}`;
+      document.head.appendChild(script);
+    };
+
+    loadWishes();
+    pollTimer = window.setInterval(loadWishes, 30000);
+    return () => {
+      mounted = false;
+      window.clearInterval(pollTimer);
+      pendingCleanup.forEach((cleanup) => cleanup());
+    };
+  }, [rsvpEndpoint]);
+
+  useEffect(() => {
+    if (!wishes.length) return undefined;
+    setActiveIndex((current) => current < 0 ? wishes.length - 1 : current % wishes.length);
+    setVisible(true);
+    setLoadStatus("ready");
+    let hideTimer = window.setTimeout(() => setVisible(false), 8000);
+    let transitionTimer;
+    const rotation = window.setInterval(() => {
+      setVisible(false);
+      transitionTimer = window.setTimeout(() => {
+        setActiveIndex((current) => (current + 1) % wishes.length);
+        setVisible(true);
+        hideTimer = window.setTimeout(() => setVisible(false), 8000);
+      }, 350);
+    }, 240000);
+    return () => {
+      window.clearInterval(rotation);
+      window.clearTimeout(hideTimer);
+      window.clearTimeout(transitionTimer);
+    };
+  }, [wishes.length]);
+
+  const wish = wishes[activeIndex];
+  if (loadStatus === "loading") return null;
+
+  return createPortal(
+    <aside className={`wish-notification${visible ? " is-visible" : ""}`} role="status" aria-live="polite">
+      <span className="wish-notification__heart" aria-hidden="true">♥</span>
+      <div className="wish-notification__content">
+        {wish ? (
+          <>
+            <strong>{wish.name} gửi lời chúc</strong>
+            <p>{wish.message}</p>
+          </>
+        ) : (
+          <>
+            <strong>{loadStatus === "empty" ? "Lời chúc từ khách mời" : "Chưa kết nối được lời chúc"}</strong>
+            <p>{loadStatus === "empty" ? "Chưa có lời chúc nào trong Google Sheet." : "Kiểm tra deployment Apps Script và quyền truy cập Web App."}</p>
+          </>
+        )}
+      </div>
+    </aside>,
+    document.body,
   );
 }
 
@@ -446,6 +547,7 @@ function App() {
         <Envelope onOpen={handleOpen} inviteeName={inviteeName} />
       ) : (
         <div className="wedding-app wedding-app--open">
+          <WishNotification />
           <FallingHearts />
           <div className="petals petals--light" aria-hidden="true">
             {Array.from({ length: 14 }).map((_, i) => (

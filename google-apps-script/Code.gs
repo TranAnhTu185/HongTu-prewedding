@@ -36,8 +36,42 @@ function doPost(e) {
   return jsonResponse({ ok: true });
 }
 
-function doGet() {
+function doGet(e) {
+  const params = (e && e.parameter) || {};
+  if (params.action === "wishes") {
+    const result = getWishes();
+    // JSONP giúp trang thiệp đọc dữ liệu công khai từ Apps Script mà không vướng CORS.
+    const callback = String(params.callback || "");
+    if (/^[A-Za-z_$][\w$]*$/.test(callback)) {
+      return ContentService
+        .createTextOutput(`${callback}(${JSON.stringify(result)});`)
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return jsonResponse(result);
+  }
   return jsonResponse({ ok: true, service: "wedding-rsvp" });
+}
+
+function getWishes() {
+  const spreadsheet = SpreadsheetApp.openById(RSVP_SPREADSHEET_ID);
+  const sheet = spreadsheet.getSheetByName("RSVP");
+  if (!sheet || sheet.getLastRow() < 2) return { ok: true, wishes: [] };
+
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0].map((value) => String(value).trim().toLowerCase());
+  const nameIndex = headers.findIndex((header) => ["họ tên", "họ và tên", "họ và tên khách mời"].includes(header));
+  const messageIndex = headers.findIndex((header) => ["lời chúc", "lời nhắn", "lời chúc mừng"].includes(header));
+  if (nameIndex < 0 || messageIndex < 0) return { ok: true, wishes: [] };
+
+  const wishes = values.slice(1)
+    .map((row, index) => ({
+      id: `${index + 2}-${row[0] instanceof Date ? row[0].getTime() : String(row[0])}`,
+      name: String(row[nameIndex] || "").trim().slice(0, 120),
+      message: String(row[messageIndex] || "").trim().slice(0, 1000),
+    }))
+    .filter((wish) => wish.name && wish.message);
+
+  return { ok: true, wishes };
 }
 
 function jsonResponse(value) {

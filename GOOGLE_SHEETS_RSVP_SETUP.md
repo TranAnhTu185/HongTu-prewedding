@@ -12,6 +12,6 @@ Form RSVP gửi dữ liệu tới Google Apps Script Web App. Apps Script thêm 
 6. Sao chép URL Web App kết thúc bằng `/exec`.
 7. Dán URL đó vào `rsvpEndpoint` trong `src/data/weddingConfig.js`.
 
-Khi có phản hồi đầu tiên, script tự tạo tab `RSVP` cùng các cột thời gian, họ tên, tham dự, số khách và lời chúc. Sau khi sửa Apps Script, dùng **Deploy → Manage deployments → Edit → New version** để cập nhật Web App.
+Khi có phản hồi đầu tiên, script tự tạo tab `RSVP` cùng các cột thời gian, họ tên, tham dự, số khách và lời chúc. Trang thiệp đọc các cột `Họ tên` và `Lời chúc` để hiện thông báo lời chúc; tiêu đề `Họ và tên` cũng được hỗ trợ. Sau khi cập nhật `Code.gs`, dùng **Deploy → Manage deployments → Edit → New version** để cập nhật Web App, nếu không endpoint đọc lời chúc sẽ chưa hoạt động.
 
 > Web App phải cho phép người dùng ẩn danh truy cập để khách không cần đăng nhập Google. Vì vậy URL endpoint có thể được gọi công khai; chỉ chia sẻ bảng tính với những người cần xem RSVP.

@@ -1,4 +1,55 @@
 /* ── Envelope Screen ── */
+.wish-notification {
+  position: fixed;
+  z-index: 2147483000;
+  top: max(18px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(390px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid rgba(196, 163, 90, 0.45);
+  border-radius: 14px;
+  background: rgba(255, 252, 248, 0.96);
+  box-shadow: 0 10px 34px rgba(77, 48, 48, 0.18);
+  color: var(--text-dark);
+  opacity: 0;
+  transform: translateY(-14px);
+  pointer-events: none;
+  transition: opacity 320ms ease, transform 320ms ease;
+}
+
+.wish-notification.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.wish-notification__heart {
+  display: grid;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--blush);
+  color: var(--rose-dark);
+}
+
+.wish-notification__content { min-width: 0; }
+.wish-notification__content strong { color: var(--rose-dark); font-size: 0.9rem; }
+.wish-notification__content p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 4px 0 0;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
 .envelope-screen {
   min-height: 100svh;
   display: flex;
