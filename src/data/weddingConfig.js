@@ -71,11 +71,6 @@ export const weddingConfig = {
       caption: 'Nụ hôn đầu tiên trong ngày cưới',
     },
     {
-      src: '/pictures/optimized/thumbs/HTC06828.webp',
-      fullSrc: '/pictures/optimized/large/HTC06828.webp',
-      caption: 'Bàn tiệc trang trí',
-    },
-    {
       src: '/pictures/optimized/thumbs/HTC06859.webp',
       fullSrc: '/pictures/optimized/large/HTC06859.webp',
       caption: 'Chúc mừng hạnh phúc',
@@ -85,11 +80,6 @@ export const weddingConfig = {
       src: '/pictures/optimized/thumbs/HTC06929.webp',
       fullSrc: '/pictures/optimized/large/HTC06929.webp',
       caption: 'Bên bờ biển',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC06942.webp',
-      fullSrc: '/pictures/optimized/large/HTC06942.webp',
-      caption: 'Khoảnh khắc lãng mạn',
     },
     {
       src: '/pictures/optimized/thumbs/HTC06988.webp',
@@ -103,40 +93,10 @@ export const weddingConfig = {
       caption: 'Khoảnh khắc lãng mạn',
     },
     {
-      src: '/pictures/optimized/thumbs/HTC07326.webp',
-      fullSrc: '/pictures/optimized/large/HTC07326.webp',
-      caption: 'Nhẫn cưới',
-    },
-    {
       src: '/pictures/optimized/thumbs/HTC07382.webp',
       fullSrc: '/pictures/optimized/large/HTC07382.webp',
       caption: 'Ngày trọng đại',
       featured: true,
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC07409.webp',
-      fullSrc: '/pictures/optimized/large/HTC07409.webp',
-      caption: 'Khoảnh khắc lãng mạn',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC07414.webp',
-      fullSrc: '/pictures/optimized/large/HTC07414.webp',
-      caption: 'Nhẫn cưới',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC07489.webp',
-      fullSrc: '/pictures/optimized/large/HTC07489.webp',
-      caption: 'Ngày trọng đại',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC07597.webp',
-      fullSrc: '/pictures/optimized/large/HTC07597.webp',
-      caption: 'Khoảnh khắc lãng mạn',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC07616.webp',
-      fullSrc: '/pictures/optimized/large/HTC07616.webp',
-      caption: 'Nhẫn cưới',
     },
     {
       src: '/pictures/optimized/thumbs/HTC07640.webp',
@@ -145,59 +105,14 @@ export const weddingConfig = {
       featured: true,
     },
     {
-      src: '/pictures/optimized/thumbs/HTC07651.webp',
-      fullSrc: '/pictures/optimized/large/HTC07651.webp',
-      caption: 'Khoảnh khắc lãng mạn',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC07728.webp',
-      fullSrc: '/pictures/optimized/large/HTC07728.webp',
-      caption: 'Nhẫn cưới',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC07787.webp',
-      fullSrc: '/pictures/optimized/large/HTC07787.webp',
-      caption: 'Ngày trọng đại',
-    },
-    {
       src: '/pictures/optimized/thumbs/HTC07796.webp',
       fullSrc: '/pictures/optimized/large/HTC07796.webp',
       caption: 'Khoảnh khắc lãng mạn',
     },
     {
-      src: '/pictures/optimized/thumbs/HTC07944.webp',
-      fullSrc: '/pictures/optimized/large/HTC07944.webp',
-      caption: 'Nhẫn cưới',
-    },
-    {
       src: '/pictures/optimized/thumbs/HTC07970.webp',
       fullSrc: '/pictures/optimized/large/HTC07970.webp',
       caption: 'Ngày trọng đại',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC06221.webp',
-      fullSrc: '/pictures/optimized/large/HTC06221.webp',
-      caption: 'Cùng nhau mãi mãi',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC06225.webp',
-      fullSrc: '/pictures/optimized/large/HTC06225.webp',
-      caption: 'Chụp ảnh cưới ngoài trời',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC06257.webp',
-      fullSrc: '/pictures/optimized/large/HTC06257.webp',
-      caption: 'Ngày hạnh phúc',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC06355.webp',
-      fullSrc: '/pictures/optimized/large/HTC06355.webp',
-      caption: 'Forever & Always',
-    },
-    {
-      src: '/pictures/optimized/thumbs/HTC06375.webp',
-      fullSrc: '/pictures/optimized/large/HTC06375.webp',
-      caption: 'Chuyến đi đầu tiên',
     },
   ],
   // Bốn dấu mốc chính trong chuyện tình của hai bạn.

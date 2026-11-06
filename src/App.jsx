@@ -205,13 +205,14 @@ function WishNotification() {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [visible, setVisible] = useState(false);
   const [loadStatus, setLoadStatus] = useState("loading");
+  const [refreshCount, setRefreshCount] = useState(0);
   const { rsvpEndpoint } = weddingConfig;
 
   useEffect(() => {
     if (!rsvpEndpoint) return undefined;
     let requestId = 0;
     let mounted = true;
-    let pollTimer;
+    let retryTimer;
     const pendingCleanup = new Set();
 
     const loadWishes = () => {
@@ -228,16 +229,23 @@ function WishNotification() {
           setWishes(response.wishes);
           setLoadStatus(response.wishes.length ? "ready" : "empty");
           setVisible(true);
+          if (!response.wishes.length) {
+            retryTimer = window.setTimeout(() => setRefreshCount((count) => count + 1), 240000);
+          }
         } else if (mounted) {
+          setWishes([]);
           setLoadStatus("error");
           setVisible(true);
+          retryTimer = window.setTimeout(() => setRefreshCount((count) => count + 1), 240000);
         }
         cleanup();
       };
       script.onerror = () => {
         if (mounted) {
+          setWishes([]);
           setLoadStatus("error");
           setVisible(true);
+          retryTimer = window.setTimeout(() => setRefreshCount((count) => count + 1), 240000);
         }
         cleanup();
       };
@@ -246,35 +254,41 @@ function WishNotification() {
     };
 
     loadWishes();
-    pollTimer = window.setInterval(loadWishes, 30000);
     return () => {
       mounted = false;
-      window.clearInterval(pollTimer);
+      window.clearTimeout(retryTimer);
       pendingCleanup.forEach((cleanup) => cleanup());
     };
-  }, [rsvpEndpoint]);
+  }, [rsvpEndpoint, refreshCount]);
 
   useEffect(() => {
     if (!wishes.length) return undefined;
-    setActiveIndex((current) => current < 0 ? wishes.length - 1 : current % wishes.length);
+    let currentIndex = 0;
+    setActiveIndex(currentIndex);
     setVisible(true);
     setLoadStatus("ready");
-    let hideTimer = window.setTimeout(() => setVisible(false), 8000);
+    let rotationTimer;
     let transitionTimer;
-    const rotation = window.setInterval(() => {
+
+    rotationTimer = window.setTimeout(function showNextWish() {
       setVisible(false);
       transitionTimer = window.setTimeout(() => {
-        setActiveIndex((current) => (current + 1) % wishes.length);
+        currentIndex += 1;
+        if (currentIndex >= wishes.length) {
+          setLoadStatus("loading");
+          setRefreshCount((count) => count + 1);
+          return;
+        }
+        setActiveIndex(currentIndex);
         setVisible(true);
-        hideTimer = window.setTimeout(() => setVisible(false), 8000);
+        rotationTimer = window.setTimeout(showNextWish, 5000);
       }, 350);
-    }, 240000);
+    }, 7000);
     return () => {
-      window.clearInterval(rotation);
-      window.clearTimeout(hideTimer);
+      window.clearTimeout(rotationTimer);
       window.clearTimeout(transitionTimer);
     };
-  }, [wishes.length]);
+  }, [wishes]);
 
   const wish = wishes[activeIndex];
   if (loadStatus === "loading") return null;
